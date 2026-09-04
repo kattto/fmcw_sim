@@ -1,0 +1,16 @@
+[project]
+name = "fmcw"
+version = "0.1.0"
+description = "FMCW radar simulation and parameter estimation"
+requires-python = ">=3.10"
+dependencies = ["numpy", "scipy", "matplotlib"]
+
+[project-optional-dependencies]
+dev = ["pytest"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
