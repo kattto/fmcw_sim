@@ -5,3 +5,4 @@ __pycache__/
 figures/
 .pytest_cache/
 .ipynb_checkpoints/
+docs/

@@ -76,7 +76,7 @@ def get_CRB(params, snr, unit="Hz"):
         return np.sqrt(var_f * params.N**2)
     
     elif unit == "m":
-        return np.sqrt(var_f * (C * params.fs) / (2 * params.K))
+        return np.sqrt(var_f * params.unambig_range**2)
     
     elif unit == "raw":
         return np.sqrt(var_f)
