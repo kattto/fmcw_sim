@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from fmcw.params import RadarParams
 from fmcw.scene import Target
 from fmcw.signal import get_IF_cube
-from fmcw.processing import get_rda_cube, get_range_axis, get_velocity_axis, get_angle_axis, get_peaks
+from fmcw.processing import *
 
 params = RadarParams()
 targets = [
@@ -29,7 +29,7 @@ rd_map -= np.max(rd_map)
 ra_map -= np.max(ra_map)
 
 # Find targets
-get_peaks(params, targets, rda_cube)
+get_peaks_old(params, targets, rda_cube)
 
 # ~~~~~~~~~~~~~~~~~~~~~~ Plotting ~~~~~~~~~~~~~~~~~~~~~~
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))

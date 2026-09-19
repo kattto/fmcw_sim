@@ -9,24 +9,23 @@ def get_IF_cube(params, targets, noise=None, snr=None):
     Ts = 1.0 / params.fs
     
     # building the IF signal data
-    data_I = np.zeros((N, M, L), dtype=np.float64)            # float64 because precision is needed for phase fidelity
-    data_Q = np.zeros((N, M, L), dtype=np.float64)            #
-    n_axis = np.arange(N)
-    for (i, target) in enumerate(targets):
-        
+    data = np.zeros((N, M, L), dtype=np.complex128)
+    
+    n_axis = np.arange(N)[:, np.newaxis, np.newaxis]
+    m_axis = np.arange(M)[np.newaxis, :, np.newaxis]
+    l_axis = np.arange(L)[np.newaxis, np.newaxis, :]
+    
+    for target in targets:
         if snr is None:
             A = get_rx_amplitude(params, target)
         else:
             A = 1.0
             
         tau_0 = 2.0 * target.r / C
-        for m in range(M):
-            tau = tau_0 + (2.0*target.v / C) * (m * params.T_chirp + (n_axis * Ts))
-            arg = 2.0 * np.pi * (params.fc * tau + params.K * tau*n_axis * Ts - 0.5*params.K*tau**2)
-            for antenna in range(L):
-                delta_phi = 2.0 * np.pi * params.dx * antenna * np.sin(np.deg2rad(target.a)) / params.lam
-                data_I[:, m, antenna] += A * np.cos(arg + delta_phi)
-                data_Q[:, m, antenna] += A * np.sin(arg + delta_phi)
+        tau = tau_0 + (2.0*target.v / C) * (m_axis * params.T_chirp + (n_axis * Ts))
+        arg = 2.0 * np.pi * (params.fc * tau + params.K * tau*n_axis * Ts - 0.5*params.K*tau**2)
+        delta_phi = 2.0 * np.pi * params.dx * l_axis * np.sin(np.deg2rad(target.a)) / params.lam
+        data += A * np.exp(1j * (arg + delta_phi))
     
     if noise is not None:
         if snr is None:
@@ -34,9 +33,13 @@ def get_IF_cube(params, targets, noise=None, snr=None):
         else:
             sigma = 1.0 / np.sqrt(2.0 * 10**(snr / 10.0)) 
             
-        data_I += noise.normal(0, sigma, (N, M, L))
-        data_Q += noise.normal(0, sigma, (N, M, L))
-    
-    return data_I + 1j*data_Q
+        noise_I = noise.normal(0, sigma, (N, M, L))
+        noise_Q = noise.normal(0, sigma, (N, M, L))
+        data += noise_I + 1j * noise_Q
+            
+    return data
 
-    
+
+def get_IF_r_vec(params, targets, noise=None, snr=None):
+    ## Returns only the range vector (Nx1) instead of the entire RDA cube. 
+    return
