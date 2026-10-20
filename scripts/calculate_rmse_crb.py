@@ -1,5 +1,6 @@
-# do later
+# Calculates RMSE data points at different SNR ranges for a single target scenario against CRB
 
+from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from fmcw.params import RadarParams
@@ -8,7 +9,7 @@ from fmcw.signal import get_IF_r_vec
 from fmcw.processing import get_range_axis, get_CRB
 from fmcw.estimators import *
 
-N_TRIALS = 1                    # Monte Carlo trials
+N_TRIALS = 1000                    # Monte Carlo trials
 SNR_DB = np.arange(-20, 41, 1)      # SNR Range
 SEED = 0                            # RNG seed
 
@@ -18,7 +19,8 @@ ESTIMATORS = {
     "FFT peak": fft_peak,
     "A&M": aboutanios_mulgrew,
     "FIIB": fiib,
-    "Root-MUSIC": root_music
+    "Root-MUSIC": root_music,
+    "ESPRIT": esprit
 }
 
 params = RadarParams()
@@ -31,7 +33,6 @@ rng = np.random.default_rng(SEED)
 # v = 0 keeps the IF signal a pure tone, which is what the CRB assumes.
 r_centre_bin = 15
 target = Target(r=(r_centre_bin * bin_width), v=0.0, a=0.0, rcs=1.0)
-
 crb = [get_CRB(params, snr, unit="bin") for snr in SNR_DB]
 
 # rmse["A&M"] will hold one RMSE value per SNR, in the same order as SNR_DB.
@@ -57,6 +58,7 @@ for snr in SNR_DB:
     for name in ESTIMATORS:
         rmse[name].append(np.sqrt(np.mean(squared_errors[name])))
 
+    # np.savez("data/mc_crb_results.npz", snr_db=SNR_DB, crb=crb, **rmse)        # Saves results to file
 
 # ~~~~~~~~~~~~~~~~~~~~~~ Plotting ~~~~~~~~~~~~~~~~~~~~~~
 fig, ax = plt.subplots()

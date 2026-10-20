@@ -1,5 +1,6 @@
-# desc
+# Implements the estimators of interest. Includes single-tone and multi-tone
 
+import scipy
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 
@@ -103,17 +104,19 @@ def root_music(x, L=1):
     nu_hat = np.zeros(L)
 
     # Create covariance matrix
-    Y = sliding_window_view(x, window_shape=P)      # Returns (S, P)
+    Y = np.ascontiguousarray(sliding_window_view(x, window_shape=P))      # Returns (S, P)
     R_hat = (Y.T @ Y.conj()) / S                    # (P, S) @ (S, P)
 
-    # Decompose the covariance matrix
-    eigvals, eigvecs = np.linalg.eigh(R_hat)
+    # # Decompose the covariance matrix
+    # eigvals, eigvecs = np.linalg.eigh(R_hat)
 
-    # Extract the noise subspace (first P-L columns)
-    E_n = eigvecs[:, :P-L]
+    # # Extract the noise subspace (first P-L columns)
+    # E_n = eigvecs[:, :P-L]
 
-    # Projection matrix
-    C = E_n @ E_n.conj().T
+    # # Projection matrix
+    # C = E_n @ E_n.conj().T
+    eigvals, E_s = scipy.linalg.eigh(R_hat, subset_by_index=[P - L, P - 1])
+    C = np.eye(P) - E_s @ E_s.conj().T
 
     # Sum diagonals (top right to bottom left)
     coeffs = np.zeros(int(2*P - 1), dtype=np.complex128)
@@ -129,8 +132,49 @@ def root_music(x, L=1):
     roots_tgts = sorted(roots, key=abs, reverse=True)[:L]
 
     for i, tgt in enumerate(roots_tgts):
-        bin = np.angle(tgt) / (2.0 * np.pi) * N
-        nu_hat[i] = bin if bin >= 0 else bin + N
+        tgt_bin = np.angle(tgt) / (2.0 * np.pi) * N
+        nu_hat[i] = tgt_bin if tgt_bin >= 0 else tgt_bin + N
+    nu_hat.sort()
+
+    # Needs to differentiate between single target and target separation use cases
+    if L == 1:
+        return nu_hat[0]
+    else:
+        return nu_hat
+
+
+
+def esprit(x, L=1):
+    N = len(x)
+    P = N//2 - 1                # FIIB paper uses N/2 - 1
+    S = N - P + 1
+    nu_hat = np.zeros(L)
+
+    # Create covariance matrix
+    Y = np.ascontiguousarray(sliding_window_view(x, window_shape=P))      # Returns (S, P)
+    R_hat = (Y.T @ Y.conj()) / S                    # (P, S) @ (S, P)
+
+    # # Decompose the covariance matrix
+    # eigvals, eigvecs = np.linalg.eigh(R_hat)
+
+    # # Extract the signal subspace (last L columns) size (P, L)
+    # E_s = eigvecs[:, -L:]
+    eigvals, E_s = scipy.linalg.eigh(R_hat, subset_by_index=[P - L, P - 1])
+
+    # Shifted copies
+    E_1 = E_s[:-1, :]          # Without last row
+    E_2 = E_s[1:, :]           # Without first row
+
+    # Solve rotation: L x L matrix psi
+    psi = np.linalg.lstsq(E_1, E_2)[0]
+
+    # Find eigenvalues of psi
+    tgts = np.linalg.eigvals(psi)
+
+    # Convert to bins
+    for i, tgt in enumerate(tgts):
+        tgt_bin = np.angle(tgt) / (2.0 * np.pi) * N
+        nu_hat[i] = tgt_bin if tgt_bin >= 0 else tgt_bin + N
     nu_hat.sort()
 
     # Needs to differentiate between single target and target separation use cases
