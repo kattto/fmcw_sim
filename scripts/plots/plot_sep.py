@@ -3,7 +3,7 @@
 import numpy as np
 import  matplotlib.pyplot as plt
 
-d = np.load("data/mc_sep_results.npz")
+d = np.load("data/plotting_data/mc_sep_results.npz")
 SEP_BINS, crb, SNR = d["sep_bins"], d["crb"], d["snr"]
 rmse = {name: d[f"{name}_t1"] for name in ["FIIB", "Root-MUSIC", "ESPRIT"]}
 

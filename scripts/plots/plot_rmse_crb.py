@@ -3,7 +3,7 @@
 import numpy as np
 import  matplotlib.pyplot as plt
 
-d = np.load("data/mc_crb_results_og.npz")
+d = np.load("data/plotting_data/mc_crb_results_og.npz")
 SNR_DB, crb = d["snr_db"], d["crb"]
 rmse = {name: d[name] for name in ["FIIB", "Root-MUSIC", "ESPRIT"]}
 
